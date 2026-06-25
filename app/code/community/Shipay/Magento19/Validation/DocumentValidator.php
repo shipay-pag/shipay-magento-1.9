@@ -8,14 +8,23 @@ class Shipay_Magento19_Validation_DocumentValidator {
    * @return bool
    */
   public function validateDocument($document) {
-    $document = preg_replace('/[^0-9]/is', '', $document);
-    if (strlen($document) == 11) {
+    $document = $this->normalizeDocument($document);
+    if (preg_match('/^\d{11}$/', $document)) {
       return $this->validateDocumentCpf($document);
     } else if (strlen($document) == 14) {
       return $this->validateDocumentCnpj($document);
     } else {
       return false;
     }
+  }
+
+  /**
+   * Function to normalize document
+   * @param string $document
+   * @return string
+   */
+  protected function normalizeDocument($document) {
+    return strtoupper(preg_replace('/[^A-Z0-9]/i', '', $document));
   }
 
   /**
@@ -45,12 +54,16 @@ class Shipay_Magento19_Validation_DocumentValidator {
    * @return bool
    */
   protected function validateDocumentCnpj($document) {
+    if (!preg_match('/^[A-Z0-9]{12}\d{2}$/', $document)) {
+      return false;
+    }
+
     if (preg_match('/(\d)\1{13}/', $document)) {
       return false;
     }
 
     for ($i = 0, $j = 5, $soma = 0; $i < 12; $i++) {
-      $soma += $document[$i] * $j;
+      $soma += $this->getCnpjCharValue($document[$i]) * $j;
       $j = ($j == 2) ? 9 : $j - 1;
     }
 
@@ -60,12 +73,21 @@ class Shipay_Magento19_Validation_DocumentValidator {
       return false;
 
     for ($i = 0, $j = 6, $soma = 0; $i < 13; $i++) {
-      $soma += $document[$i] * $j;
+      $soma += $this->getCnpjCharValue($document[$i]) * $j;
       $j = ($j == 2) ? 9 : $j - 1;
     }
 
     $resto = $soma % 11;
 
     return $document[13] == ($resto < 2 ? 0 : 11 - $resto);
+  }
+
+  /**
+   * Function to get cnpj character value
+   * @param string $char
+   * @return int
+   */
+  protected function getCnpjCharValue($char) {
+    return ord($char) - 48;
   }
 }

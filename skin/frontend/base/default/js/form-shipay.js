@@ -57,19 +57,22 @@ function typeMethodSelected(imageElement) {
 }
 
 function maskDocument(document) {
-    const i = document.value.length;
-    if (i == 11) {
-        document.value = maskCpf(document.value);
+    const value = normalizeDocument(document.value);
+    if (/^\d{11}$/.test(value)) {
+        document.value = maskCpf(value);
+        return;
     }
-    if (i == 15) {
-        document.value = document.value.replace(/[\.-]/g, "");
+
+    if (value.length >= 14) {
+        document.value = maskCnpj(value.substring(0, 14));
+        return;
     }
-    if (i == 14) {
-        document.value = maskCnpj(document.value);
-    }
-    if (i < 14 && i > 11) {
-        document.value = document.value.replace(/[\.-]/g, "");
-    }
+
+    document.value = value;
+}
+
+function normalizeDocument(document) {
+    return document.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 }
 
 function maskCpf(cpf) {
@@ -81,15 +84,15 @@ function maskCpf(cpf) {
 }
 
 function maskCnpj(cnpj) {
-    cnpj = (cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5"));
+    cnpj = normalizeDocument(cnpj);
+    cnpj = (cnpj.replace(/^([A-Z0-9]{2})([A-Z0-9]{3})([A-Z0-9]{3})([A-Z0-9]{4})(\d{2})/, "$1.$2.$3/$4-$5"));
     return cnpj;
 }
 
 Validation.addAllThese([
     ['validate-document', 'Documento inválido. Verifique por favor.', function (v) {
-        const tamDocument = v.length;
-        if (tamDocument == 14) {
-            v = v.replace(/\D/g, '');
+        v = normalizeDocument(v);
+        if (/^\d{11}$/.test(v)) {
             if (v.toString().length != 11 || /^(\d)\1{10}$/.test(v)) return false;
             var result = true;
             [9, 10].forEach(function (j) {
@@ -103,13 +106,8 @@ Validation.addAllThese([
             });
             return result;
         }
-        else if (tamDocument == 18) {
-            var cnpj = v.trim();
-
-            cnpj = cnpj.replace(/\./g, '');
-            cnpj = cnpj.replace('-', '');
-            cnpj = cnpj.replace('/', '');
-            cnpj = cnpj.split('');
+        else if (/^[A-Z0-9]{12}\d{2}$/.test(v)) {
+            var cnpj = v.split('');
 
             var v1 = 0;
             var v2 = 0;
@@ -127,9 +125,9 @@ Validation.addAllThese([
 
             for (var i = 0, p1 = 5, p2 = 13; (cnpj.length - 2) > i; i++, p1--, p2--) {
                 if (p1 >= 2) {
-                    v1 += cnpj[i] * p1;
+                    v1 += getCnpjCharValue(cnpj[i]) * p1;
                 } else {
-                    v1 += cnpj[i] * p2;
+                    v1 += getCnpjCharValue(cnpj[i]) * p2;
                 }
             }
 
@@ -147,9 +145,9 @@ Validation.addAllThese([
 
             for (var i = 0, p1 = 6, p2 = 14; (cnpj.length - 1) > i; i++, p1--, p2--) {
                 if (p1 >= 2) {
-                    v2 += cnpj[i] * p1;
+                    v2 += getCnpjCharValue(cnpj[i]) * p1;
                 } else {
-                    v2 += cnpj[i] * p2;
+                    v2 += getCnpjCharValue(cnpj[i]) * p2;
                 }
             }
 
@@ -182,3 +180,7 @@ Validation.addAllThese([
         }
     }]
 ]);
+
+function getCnpjCharValue(value) {
+    return value.charCodeAt(0) - 48;
+}
