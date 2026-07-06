@@ -13,11 +13,20 @@ class Shipay_Magento19_Resource_GetTaxVat {
     $taxDocument = Mage::getStoreConfig('payment/shipay_payments/capture_tax', $storeId);
     if ($taxDocument) {
       $document = $data['client_document'];
-      return preg_replace('/[^0-9]/is', '', $document);
+      return $this->normalizeDocument($document);
     } else {
       $customer = Mage::getModel('customer/customer')->load($customerId);
       $document = $customer->getData('taxvat');
-      return preg_replace('/[^0-9]/is', '', $document);
+      return $this->normalizeDocument($document);
     }
+  }
+
+  /**
+   * Function to normalize document
+   * @param string $document
+   * @return string
+   */
+  protected function normalizeDocument($document): string {
+    return strtoupper(preg_replace('/[^A-Z0-9]/i', '', $document));
   }
 }
