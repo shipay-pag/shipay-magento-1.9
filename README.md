@@ -99,7 +99,6 @@ Então, nesta parte vamos ter 2 etapas de configuração.
   ![](.github/images/shipay-success.png)
 
   
-
 #### Shipay - Registro
 
 Dentro do painel do Magento é possível realizar o cadastro na plataforma da *Shipay*.
